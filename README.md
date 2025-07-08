@@ -5,6 +5,7 @@ Learning OpenGL with Odin lang.
 ## Run
 
 `odin run 1.0.triangle -out:build/game_debug -debug`
+
 Replace `1.0.triangle` with other examples, ex. `2.0.shaders`.
 
 ### For Linux
