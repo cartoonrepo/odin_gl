@@ -1,8 +1,10 @@
+// check out https://learnopengl.com/Getting-started/Hello-Triangle
+
 package main
 
 import     "core:fmt"
 import     "core:os"
-import     "core:math/linalg/glsl"
+import glm "core:math/linalg/glsl"
 import gl  "vendor:OpenGL"
 import SDL "vendor:sdl3"
 
@@ -18,6 +20,15 @@ event      :  SDL.Event
 
 should_exit : bool
 
+PATH            :: "1.0.triangle/"
+VERTEX_SOURCE   :: PATH + "shader.vert"
+FRAGMENT_SOURCE :: PATH + "shader.frag"
+
+Vertex :: struct {
+    position: glm.vec2,
+    color   : glm.vec4,
+}
+
 main :: proc() {
     // https://pkg.odin-lang.org/vendor/sdl3/#WindowFlag
     // flags := SDL.WindowFlags { .OPENGL, .RESIZABLE }
@@ -27,6 +38,52 @@ main :: proc() {
     // vsync
     SDL.GL_SetSwapInterval(1)
 
+    // https://pkg.odin-lang.org/vendor/OpenGL/#load_shaders
+    shader, ok := gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE)
+    if !ok {
+        // https://pkg.odin-lang.org/vendor/OpenGL/#get_last_error_message
+        // https://github.com/odin-lang/Odin/blob/090cac62f9cc30f759cba086298b4bdb8c7c62b3/vendor/OpenGL/helpers.odin#L51
+
+        // in release mode compiler will print shader error by default.
+        // that's why i added debug check so error print happens one time.
+        when gl.GL_DEBUG {
+            fmt.eprintln(gl.get_last_error_message())
+        }
+    }
+
+
+    // colors for 'a_color' in vertex shader.
+    tomato_red     := glm.vec4{1.0,   0.388, 0.278, 1.0}
+    warm_gold      := glm.vec4{1.0,   0.8,   0.361, 1.0}
+    soft_violet    := glm.vec4{0.729, 0.408, 0.784, 1.0}
+    mint_green     := glm.vec4{0.4,   1.0,   0.8,   1.0}
+
+    // vertices for hungry gpu.
+    vertices := []Vertex {
+        {{-0.5, -0.5}, mint_green },
+        {{ 0.5, -0.5}, warm_gold  },
+        {{ 0.0,  0.5}, soft_violet},
+    }
+
+    // buffers
+    vao, vbo: u32
+
+    gl.GenVertexArrays(1, &vao)
+    gl.GenBuffers(1, &vbo)
+
+    gl.BindVertexArray(vao)
+
+    gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.BufferData(gl.ARRAY_BUFFER, len(vertices) * size_of(vertices[0]), raw_data(vertices), gl.STATIC_DRAW)
+
+    gl.EnableVertexAttribArray(0) // a_positon in vertex shader
+    gl.EnableVertexAttribArray(1) // a_color   in vertex shader
+
+    // Vertex position is vec2: number of components = 2
+    // Vertex color    is vec4: number of components = 4
+    gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
+    gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
+
     for !should_exit {
         process_events()
 
@@ -34,17 +91,24 @@ main :: proc() {
         gl.ClearColor(0.0, 0.1, 0.15, 1.0)
         gl.Clear(gl.COLOR_BUFFER_BIT)
 
+        gl.UseProgram(shader)
+        gl.BindVertexArray(vao)
+        gl.DrawArrays(gl.TRIANGLES, 0, i32(len(vertices)))
+
         SDL.GL_SwapWindow(window)
     }
 }
 
 process_events :: proc() {
     for SDL.PollEvent(&event) {
+        // https://pkg.odin-lang.org/vendor/sdl3/#EventType
         #partial switch event.type {
         case .QUIT:
             should_exit = true
 
         case .WINDOW_PIXEL_SIZE_CHANGED:
+            // https://wiki.libsdl.org/SDL3/SDL_Event
+            // see  SDL_WindowEvent
             w := event.window.data1
             h := event.window.data2
             gl.Viewport(0, 0, w, h)
