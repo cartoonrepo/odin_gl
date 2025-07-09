@@ -13,7 +13,8 @@ source="1.0.triangle" # source directory
 # uncomment below line and add collecton directory if you want to use collection
 # collection="-collection:shared=dir/to/shared"
 
-debug_flags="-debug -o:none -keep-executable" #remove -keep-executable if you don't need.
+vet="-vet-shadowing -vet-using-stmt -strict-style"
+debug_flags="-debug -o:none -keep-executable $vet" #remove -keep-executable if you don't need.
 release_flags="-o:speed -strict-style -vet"
 #---------------------------------------------------------------
 
@@ -78,7 +79,7 @@ for arg in "$@"; do
     if [ "$arg" == "hold" ];    then hold=true    ;fi
 done
 
-if [ "$clean" == true ];   then clean ;fi
+if [ "$clean" == true ];   then clean         ;fi
 if [ "$debug" == true ];   then debug_build   ;fi
 if [ "$release" == true ]; then release_build ;fi
 
