@@ -20,7 +20,7 @@ event      :  SDL.Event
 
 should_exit : bool
 
-PATH            :: "1.0.triangle/"
+PATH            :: "1.0_triangle/"
 VERTEX_SOURCE   :: PATH + "shader.vert"
 FRAGMENT_SOURCE :: PATH + "shader.frag"
 
@@ -47,7 +47,7 @@ main :: proc() {
         // in release mode compiler will print shader error by default.
         // that's why i added debug check so error print happens one time.
         when gl.GL_DEBUG {
-            fmt.eprintln(gl.get_last_error_message())
+            fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
         }
     }
 
