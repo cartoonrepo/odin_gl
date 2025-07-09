@@ -51,7 +51,6 @@ main :: proc() {
         }
     }
 
-
     // colors for 'a_color' in vertex shader.
     tomato_red     := glm.vec4{1.0,   0.388, 0.278, 1.0}
     warm_gold      := glm.vec4{1.0,   0.8,   0.361, 1.0}
@@ -83,6 +82,13 @@ main :: proc() {
     // Vertex color    is vec4: number of components = 4
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
     gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
+
+    // in odin offset pointer is uintptr
+    // https://pkg.odin-lang.org/vendor/OpenGL/#VertexAttribPointer
+    // 0 * size_of(f32)                   or uintptr(0 * size_of(vertices[0].position[0]))  = 0
+    // 2 * size_of(vertices[0].color[0])  or uintprt(2 * size_of(vertices[0].color[0]))     = 8
+    // gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), uintptr(0 * size_of(f32)))
+    // gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), 2 * size_of(vertices[0].color[0]))
 
     for !should_exit {
         process_events()
