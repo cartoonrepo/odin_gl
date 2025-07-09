@@ -8,7 +8,7 @@ Learning OpenGL with Odin lang.
 
 Replace `1.0.triangle` with other examples, ex. `2.0.shaders`.
 
-### For Linux
-- `-out:cartoon` we don't need `.exe`.
+### For Linux 🫶
+- -out:cartoon
 - Make sure SDL3 libs are installed on your computer.
 - Make sure you have compiled the stb libraries. Run: `make -C "full_path_to_odin_compiler/vendor/stb/src"`.
