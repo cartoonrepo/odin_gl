@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 project_name="game"
 build_dir="build" # build directory
 
-source="1.2_triangle_exercise_3" # source directory
+source="2.0_shaders" # source directory
 
 # uncomment below line and add collecton directory if you want to use collection
 # collection="-collection:shared=dir/to/shared"
