@@ -4,7 +4,9 @@ Learning OpenGL with Odin lang.
 
 ## Run
 
-`odin run 1.0_triangle -out:cartoon.exe`
+```console
+odin run 1.0_triangle -out:cartoon.exe
+````
 
 Replace `1.0_triangle` with other examples, ex. `2.0_shaders`.
 
