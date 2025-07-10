@@ -59,21 +59,29 @@ main :: proc() {
 
     // vertices for hungry gpu.
     vertices := []Vertex {
-        {{-0.5, -0.5}, mint_green }, // bottom left
-        {{ 0.5, -0.5}, warm_gold  }, // bottom right
-        {{ 0.0,  0.5}, soft_violet}, // top
+        //a_position   a_color    in vertex shader
+        {{-0.5,  0.5}, mint_green }, // top    left
+        {{ 0.5,  0.5}, warm_gold  }, // top    right
+        {{ 0.5, -0.5}, soft_violet}, // bottom right
+        {{-0.5, -0.5}, tomato_red }, // bottom left
     }
+    //                 first  |  second   triangle
+    indices := []u16 { 0, 1, 2, 2, 3, 0 }
 
     // buffers
-    vao, vbo: u32
+    vao, vbo, ebo: u32
 
     gl.GenVertexArrays(1, &vao)
     gl.GenBuffers(1, &vbo)
+    gl.GenBuffers(1, &ebo)
 
     gl.BindVertexArray(vao)
 
     gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
     gl.BufferData(gl.ARRAY_BUFFER, len(vertices) * size_of(vertices[0]), raw_data(vertices), gl.STATIC_DRAW)
+
+    gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
+    gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices) * size_of(indices[0]), raw_data(indices), gl.STATIC_DRAW)
 
     gl.EnableVertexAttribArray(0) // a_positon in vertex shader
     gl.EnableVertexAttribArray(1) // a_color   in vertex shader
@@ -82,13 +90,6 @@ main :: proc() {
     // Vertex color    is vec4: number of components = 4
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
     gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
-
-    // in odin offset pointer is uintptr
-    // https://pkg.odin-lang.org/vendor/OpenGL/#VertexAttribPointer
-    // 0 * size_of(f32)                   or uintptr(0 * size_of(vertices[0].position[0]))  = 0
-    // 2 * size_of(vertices[0].color[0])  or uintprt(2 * size_of(vertices[0].color[0]))     = 8
-    // gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), uintptr(0 * size_of(f32)))
-    // gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), 2 * size_of(vertices[0].color[0]))
 
      for {
         process_events()
@@ -100,7 +101,9 @@ main :: proc() {
 
         gl.UseProgram(shader)
         gl.BindVertexArray(vao)
-        gl.DrawArrays(gl.TRIANGLES, 0, i32(len(vertices)))
+
+        // !NOTE: change to UNSIGNED_INT if you are using u32 for indices.
+        gl.DrawElements(gl.TRIANGLES, i32(len(indices)), gl.UNSIGNED_SHORT, nil)
 
         SDL.GL_SwapWindow(window)
     }
