@@ -1,5 +1,3 @@
-// check out https://learnopengl.com/Getting-started/Hello-Triangle
-
 package main
 
 import     "core:fmt"
@@ -20,9 +18,10 @@ event      :  SDL.Event
 
 should_exit : bool
 
-PATH            :: "./resources/shaders/"
-VERTEX_SOURCE   :: PATH + "triangle.vert"
-FRAGMENT_SOURCE :: PATH + "triangle.frag"
+PATH              :: "./resources/shaders/"
+VERTEX_SOURCE     :: PATH + "triangle.vert"
+FRAGMENT_SOURCE   :: PATH + "triangle.frag"
+FRAGMENT_SOURCE_1 :: PATH + "triangle_1.frag"
 
 Vertex :: struct {
     position: glm.vec2,
@@ -30,22 +29,22 @@ Vertex :: struct {
 }
 
 main :: proc() {
-    // https://pkg.odin-lang.org/vendor/sdl3/#WindowFlag
-    // flags := SDL.WindowFlags { .OPENGL, .RESIZABLE }
     init_window("Cartoon Window", SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
     defer close_window()
 
-    // vsync
     SDL.GL_SetSwapInterval(1)
 
-    // https://pkg.odin-lang.org/vendor/OpenGL/#load_shaders
-    shader, ok := gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE)
+    shader, shader_1 : u32
+    ok : bool
+    shader, ok = gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE)
     if !ok {
-        // https://pkg.odin-lang.org/vendor/OpenGL/#get_last_error_message
-        // https://github.com/odin-lang/Odin/blob/090cac62f9cc30f759cba086298b4bdb8c7c62b3/vendor/OpenGL/helpers.odin#L51
+        when gl.GL_DEBUG {
+            fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
+        }
+    }
 
-        // in release mode compiler will print shader error by default.
-        // that's why i added debug check so error print happens one time.
+    shader_1, ok = gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE_1)
+    if !ok {
         when gl.GL_DEBUG {
             fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
         }
@@ -57,38 +56,41 @@ main :: proc() {
     soft_violet    := glm.vec4{0.729, 0.408, 0.784, 1.0}
     mint_green     := glm.vec4{0.4,   1.0,   0.8,   1.0}
 
-    // vertices for hungry gpu.
     vertices := []Vertex {
-        {{-0.5, -0.5}, mint_green }, // bottom left
-        {{ 0.5, -0.5}, warm_gold  }, // bottom right
-        {{ 0.0,  0.5}, soft_violet}, // top
+        // first triangle
+        {{-1.0, -0.5}, mint_green }, // bottom left
+        {{ 0.0, -0.5}, warm_gold  }, // bottom right
+        {{-0.5, 0.5 }, soft_violet}, // top
+
+        // second triangle
+        {{ 0.0, -0.5}, warm_gold  }, // bottom left
+        {{ 1.0, -0.5}, soft_violet}, // bottom right
+        {{ 0.5, 0.5 }, mint_green }, // top
     }
 
     // buffers
-    vao, vbo: u32
+    vao, vbo: [2]u32
 
-    gl.GenVertexArrays(1, &vao)
-    gl.GenBuffers(1, &vbo)
+    gl.GenVertexArrays(2, raw_data(vao[:]))
+    gl.GenBuffers(2, raw_data(vbo[:]))
 
-    gl.BindVertexArray(vao)
-
-    gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-    gl.BufferData(gl.ARRAY_BUFFER, len(vertices) * size_of(vertices[0]), raw_data(vertices), gl.STATIC_DRAW)
-
-    gl.EnableVertexAttribArray(0) // a_positon in vertex shader
-    gl.EnableVertexAttribArray(1) // a_color   in vertex shader
-
-    // Vertex position is vec2: number of components = 2
-    // Vertex color    is vec4: number of components = 4
+    gl.BindVertexArray(vao[0])
+    gl.BindBuffer(gl.ARRAY_BUFFER, vbo[0])
+    gl.BufferData(gl.ARRAY_BUFFER, 3 * size_of(vertices[0]), raw_data(vertices), gl.STATIC_DRAW)
+    gl.EnableVertexAttribArray(0)
+    gl.EnableVertexAttribArray(1)
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
     gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
 
-    // in odin offset pointer is uintptr
-    // https://pkg.odin-lang.org/vendor/OpenGL/#VertexAttribPointer
-    // 0 * size_of(f32)                   or uintptr(0 * size_of(vertices[0].position[0]))  = 0
-    // 2 * size_of(vertices[0].color[0])  or uintprt(2 * size_of(vertices[0].color[0]))     = 8
-    // gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), uintptr(0 * size_of(f32)))
-    // gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), 2 * size_of(vertices[0].color[0]))
+    gl.BindVertexArray(vao[1])
+    gl.BindBuffer(gl.ARRAY_BUFFER, vbo[1])
+    gl.BufferData(gl.ARRAY_BUFFER, 3 * size_of(vertices[0]), raw_data(vertices[3:]), gl.STATIC_DRAW)
+    gl.EnableVertexAttribArray(0)
+    // gl.EnableVertexAttribArray(1)
+    gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
+    // gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
+
+
 
      for {
         process_events()
@@ -98,9 +100,16 @@ main :: proc() {
         gl.ClearColor(0.0, 0.1, 0.15, 1.0)
         gl.Clear(gl.COLOR_BUFFER_BIT)
 
+
+        // draw first triangle
         gl.UseProgram(shader)
-        gl.BindVertexArray(vao)
-        gl.DrawArrays(gl.TRIANGLES, 0, i32(len(vertices)))
+        gl.BindVertexArray(vao[0])
+        gl.DrawArrays(gl.TRIANGLES, 0, 3)
+
+        // draw second triangle
+        gl.UseProgram(shader_1)
+        gl.BindVertexArray(vao[1])
+        gl.DrawArrays(gl.TRIANGLES, 0, 3)
 
         SDL.GL_SwapWindow(window)
     }
@@ -108,14 +117,11 @@ main :: proc() {
 
 process_events :: proc() {
     for SDL.PollEvent(&event) {
-        // https://pkg.odin-lang.org/vendor/sdl3/#EventType
         #partial switch event.type {
         case .QUIT:
             should_exit = true
 
         case .WINDOW_PIXEL_SIZE_CHANGED:
-            // https://wiki.libsdl.org/SDL3/SDL_Event
-            // see  SDL_WindowEvent
             w := event.window.data1
             h := event.window.data2
             gl.Viewport(0, 0, w, h)
@@ -135,9 +141,6 @@ init_window :: proc(title: cstring, width, height: i32, flags: SDL.WindowFlags) 
         os.exit(1)
     }
 
-    // set opengl core profile and version 3.3
-    // https://pkg.odin-lang.org/vendor/sdl3/#GLAttr
-    // https://pkg.odin-lang.org/vendor/sdl3/#GLProfile
     SDL.GL_SetAttribute(.CONTEXT_PROFILE_MASK,  i32(SDL.GL_CONTEXT_PROFILE_CORE))
     SDL.GL_SetAttribute(.CONTEXT_MAJOR_VERSION, GL_MAJOR_VERSION)
     SDL.GL_SetAttribute(.CONTEXT_MINOR_VERSION, GL_MINOR_VERSION)
@@ -154,8 +157,6 @@ init_window :: proc(title: cstring, width, height: i32, flags: SDL.WindowFlags) 
         os.exit(1)
     }
 
-    // https://pkg.odin-lang.org/vendor/OpenGL/#load_up_to
-    // https://pkg.odin-lang.org/vendor/sdl3/#gl_set_proc_address
     gl.load_up_to(GL_MAJOR_VERSION, GL_MINOR_VERSION, SDL.gl_set_proc_address)
 
     fmt.println("VENDOR   :", gl.GetString(gl.VENDOR))

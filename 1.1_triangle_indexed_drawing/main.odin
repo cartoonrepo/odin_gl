@@ -20,9 +20,9 @@ event      :  SDL.Event
 
 should_exit : bool
 
-PATH            :: "1.0_triangle/"
-VERTEX_SOURCE   :: PATH + "shader.vert"
-FRAGMENT_SOURCE :: PATH + "shader.frag"
+PATH            :: "./resources/shaders/"
+VERTEX_SOURCE   :: PATH + "triangle.vert"
+FRAGMENT_SOURCE :: PATH + "triangle.frag"
 
 Vertex :: struct {
     position: glm.vec2,
