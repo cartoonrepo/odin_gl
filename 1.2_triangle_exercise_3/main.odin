@@ -1,3 +1,6 @@
+// Create two shader programs where the second program uses a different fragment shader that outputs the color yellow;
+// draw both triangles again where one outputs the color yellow
+
 package main
 
 import     "core:fmt"
@@ -6,11 +9,20 @@ import glm "core:math/linalg/glsl"
 import gl  "vendor:OpenGL"
 import SDL "vendor:sdl3"
 
+TITLE         :: "1.2_triangle_exercise_3"
 SCREEN_WIDTH  :: 800
 SCREEN_HEIGHT :: 600
 
 GL_MAJOR_VERSION :: 3
 GL_MINOR_VERSION :: 3
+
+VERTEX_SOURCE     :: TITLE + "/shader.vert"
+FRAGMENT_SOURCE_1 :: TITLE + "/shader_1.frag"
+FRAGMENT_SOURCE_2 :: TITLE + "/shader_2.frag"
+
+Vertex :: struct {
+    position: glm.vec2,
+}
 
 window     : ^SDL.Window
 gl_context :  SDL.GLContext
@@ -18,81 +30,62 @@ event      :  SDL.Event
 
 should_exit : bool
 
-PATH              :: "./resources/shaders/"
-VERTEX_SOURCE     :: PATH + "triangle.vert"
-FRAGMENT_SOURCE   :: PATH + "triangle.frag"
-FRAGMENT_SOURCE_1 :: PATH + "triangle_1.frag"
-
-Vertex :: struct {
-    position: glm.vec2,
-    color   : glm.vec4,
-}
-
 main :: proc() {
-    init_window("Cartoon Window", SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
+    init_window(TITLE, SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
     defer close_window()
 
     SDL.GL_SetSwapInterval(1)
 
-    shader, shader_1 : u32
     ok : bool
-    shader, ok = gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE)
-    if !ok {
-        when gl.GL_DEBUG {
-            fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
-        }
-    }
+    shader_1, shader_2 : u32
 
     shader_1, ok = gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE_1)
+    defer gl.DeleteProgram(shader_1)
     if !ok {
         when gl.GL_DEBUG {
             fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
         }
     }
 
-    // colors for 'a_color' in vertex shader.
-    tomato_red     := glm.vec4{1.0,   0.388, 0.278, 1.0}
-    warm_gold      := glm.vec4{1.0,   0.8,   0.361, 1.0}
-    soft_violet    := glm.vec4{0.729, 0.408, 0.784, 1.0}
-    mint_green     := glm.vec4{0.4,   1.0,   0.8,   1.0}
+    shader_2, ok = gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE_2)
+    defer gl.DeleteProgram(shader_2)
+    if !ok {
+        when gl.GL_DEBUG {
+            fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
+        }
+    }
 
     vertices := []Vertex {
         // first triangle
-        {{-1.0, -0.5}, mint_green }, // bottom left
-        {{ 0.0, -0.5}, warm_gold  }, // bottom right
-        {{-0.5, 0.5 }, soft_violet}, // top
+        {{-1.0, -0.5}}, // bottom left
+        {{ 0.0, -0.5}}, // bottom right
+        {{-0.5, 0.5 }}, // top
 
         // second triangle
-        {{ 0.0, -0.5}, warm_gold  }, // bottom left
-        {{ 1.0, -0.5}, soft_violet}, // bottom right
-        {{ 0.5, 0.5 }, mint_green }, // top
+        {{ 0.0, -0.5}}, // bottom left
+        {{ 1.0, -0.5}}, // bottom right
+        {{ 0.5, 0.5 }}, // top
     }
 
     // buffers
     vao, vbo: [2]u32
 
-    gl.GenVertexArrays(2, raw_data(vao[:]))
-    gl.GenBuffers(2, raw_data(vbo[:]))
+    gl.GenVertexArrays(2, raw_data(vao[:])); defer gl.DeleteVertexArrays(2, raw_data(vao[:]))
+    gl.GenBuffers(2, raw_data(vbo[:]));      defer gl.DeleteBuffers(2, raw_data(vbo[:]))
 
     gl.BindVertexArray(vao[0])
     gl.BindBuffer(gl.ARRAY_BUFFER, vbo[0])
     gl.BufferData(gl.ARRAY_BUFFER, 3 * size_of(vertices[0]), raw_data(vertices), gl.STATIC_DRAW)
     gl.EnableVertexAttribArray(0)
-    gl.EnableVertexAttribArray(1)
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
-    gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
 
     gl.BindVertexArray(vao[1])
     gl.BindBuffer(gl.ARRAY_BUFFER, vbo[1])
     gl.BufferData(gl.ARRAY_BUFFER, 3 * size_of(vertices[0]), raw_data(vertices[3:]), gl.STATIC_DRAW)
     gl.EnableVertexAttribArray(0)
-    // gl.EnableVertexAttribArray(1)
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
-    // gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
 
-
-
-     for {
+    for {
         process_events()
         if should_exit { break }
 
@@ -102,12 +95,12 @@ main :: proc() {
 
 
         // draw first triangle
-        gl.UseProgram(shader)
+        gl.UseProgram(shader_1)
         gl.BindVertexArray(vao[0])
         gl.DrawArrays(gl.TRIANGLES, 0, 3)
 
         // draw second triangle
-        gl.UseProgram(shader_1)
+        gl.UseProgram(shader_2)
         gl.BindVertexArray(vao[1])
         gl.DrawArrays(gl.TRIANGLES, 0, 3)
 

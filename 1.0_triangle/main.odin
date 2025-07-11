@@ -8,11 +8,20 @@ import glm "core:math/linalg/glsl"
 import gl  "vendor:OpenGL"
 import SDL "vendor:sdl3"
 
+TITLE         :: "1.0_triangle"
 SCREEN_WIDTH  :: 800
 SCREEN_HEIGHT :: 600
 
 GL_MAJOR_VERSION :: 3
 GL_MINOR_VERSION :: 3
+
+VERTEX_SOURCE   :: TITLE + "/shader.vert"
+FRAGMENT_SOURCE :: TITLE + "/shader.frag"
+
+Vertex :: struct {
+    position: glm.vec2,
+    color   : glm.vec4,
+}
 
 window     : ^SDL.Window
 gl_context :  SDL.GLContext
@@ -20,19 +29,10 @@ event      :  SDL.Event
 
 should_exit : bool
 
-PATH            :: "./resources/shaders/"
-VERTEX_SOURCE   :: PATH + "triangle.vert"
-FRAGMENT_SOURCE :: PATH + "triangle.frag"
-
-Vertex :: struct {
-    position: glm.vec2,
-    color   : glm.vec4,
-}
-
 main :: proc() {
     // https://pkg.odin-lang.org/vendor/sdl3/#WindowFlag
     // flags := SDL.WindowFlags { .OPENGL, .RESIZABLE }
-    init_window("Cartoon Window", SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
+    init_window(TITLE, SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
     defer close_window()
 
     // vsync
@@ -40,6 +40,7 @@ main :: proc() {
 
     // https://pkg.odin-lang.org/vendor/OpenGL/#load_shaders
     shader, ok := gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE)
+    defer gl.DeleteProgram(shader)
     if !ok {
         // https://pkg.odin-lang.org/vendor/OpenGL/#get_last_error_message
         // https://github.com/odin-lang/Odin/blob/090cac62f9cc30f759cba086298b4bdb8c7c62b3/vendor/OpenGL/helpers.odin#L51
@@ -47,7 +48,7 @@ main :: proc() {
         // in release mode compiler will print shader error by default.
         // that's why i added debug check so error print happens one time.
         when gl.GL_DEBUG {
-            fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
+            // fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
         }
     }
 
@@ -67,8 +68,8 @@ main :: proc() {
     // buffers
     vao, vbo: u32
 
-    gl.GenVertexArrays(1, &vao)
-    gl.GenBuffers(1, &vbo)
+    gl.GenVertexArrays(1, &vao); defer gl.DeleteVertexArrays(1, &vao)
+    gl.GenBuffers(1, &vbo);      defer gl.DeleteBuffers(1, &vbo)
 
     gl.BindVertexArray(vao)
 
@@ -83,14 +84,7 @@ main :: proc() {
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
     gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
 
-    // in odin offset pointer is uintptr
-    // https://pkg.odin-lang.org/vendor/OpenGL/#VertexAttribPointer
-    // 0 * size_of(f32)                   or uintptr(0 * size_of(vertices[0].position[0]))  = 0
-    // 2 * size_of(vertices[0].color[0])  or uintprt(2 * size_of(vertices[0].color[0]))     = 8
-    // gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), uintptr(0 * size_of(f32)))
-    // gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), 2 * size_of(vertices[0].color[0]))
-
-     for {
+    for {
         process_events()
         if should_exit { break }
 

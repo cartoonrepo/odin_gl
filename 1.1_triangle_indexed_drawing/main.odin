@@ -1,5 +1,3 @@
-// check out https://learnopengl.com/Getting-started/Hello-Triangle
-
 package main
 
 import     "core:fmt"
@@ -8,11 +6,20 @@ import glm "core:math/linalg/glsl"
 import gl  "vendor:OpenGL"
 import SDL "vendor:sdl3"
 
+TITLE         :: "1.1_triangle_indexed_drawing"
 SCREEN_WIDTH  :: 800
 SCREEN_HEIGHT :: 600
 
 GL_MAJOR_VERSION :: 3
 GL_MINOR_VERSION :: 3
+
+VERTEX_SOURCE   :: TITLE + "/shader.vert"
+FRAGMENT_SOURCE :: TITLE + "/shader.frag"
+
+Vertex :: struct {
+    position: glm.vec2,
+    color   : glm.vec4,
+}
 
 window     : ^SDL.Window
 gl_context :  SDL.GLContext
@@ -20,32 +27,16 @@ event      :  SDL.Event
 
 should_exit : bool
 
-PATH            :: "./resources/shaders/"
-VERTEX_SOURCE   :: PATH + "triangle.vert"
-FRAGMENT_SOURCE :: PATH + "triangle.frag"
-
-Vertex :: struct {
-    position: glm.vec2,
-    color   : glm.vec4,
-}
-
 main :: proc() {
-    // https://pkg.odin-lang.org/vendor/sdl3/#WindowFlag
-    // flags := SDL.WindowFlags { .OPENGL, .RESIZABLE }
-    init_window("Cartoon Window", SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
+    init_window(TITLE, SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
     defer close_window()
 
     // vsync
     SDL.GL_SetSwapInterval(1)
 
-    // https://pkg.odin-lang.org/vendor/OpenGL/#load_shaders
     shader, ok := gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE)
+    defer gl.DeleteProgram(shader)
     if !ok {
-        // https://pkg.odin-lang.org/vendor/OpenGL/#get_last_error_message
-        // https://github.com/odin-lang/Odin/blob/090cac62f9cc30f759cba086298b4bdb8c7c62b3/vendor/OpenGL/helpers.odin#L51
-
-        // in release mode compiler will print shader error by default.
-        // that's why i added debug check so error print happens one time.
         when gl.GL_DEBUG {
             fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
         }
@@ -71,9 +62,9 @@ main :: proc() {
     // buffers
     vao, vbo, ebo: u32
 
-    gl.GenVertexArrays(1, &vao)
-    gl.GenBuffers(1, &vbo)
-    gl.GenBuffers(1, &ebo)
+    gl.GenVertexArrays(1, &vao); defer gl.DeleteVertexArrays(1, &vao)
+    gl.GenBuffers(1, &vbo);      defer gl.DeleteBuffers(1, &vbo)
+    gl.GenBuffers(1, &ebo);      defer gl.DeleteBuffers(1, &ebo)
 
     gl.BindVertexArray(vao)
 
@@ -86,12 +77,10 @@ main :: proc() {
     gl.EnableVertexAttribArray(0) // a_positon in vertex shader
     gl.EnableVertexAttribArray(1) // a_color   in vertex shader
 
-    // Vertex position is vec2: number of components = 2
-    // Vertex color    is vec4: number of components = 4
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
     gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
 
-     for {
+    for {
         process_events()
         if should_exit { break }
 
@@ -111,14 +100,11 @@ main :: proc() {
 
 process_events :: proc() {
     for SDL.PollEvent(&event) {
-        // https://pkg.odin-lang.org/vendor/sdl3/#EventType
         #partial switch event.type {
         case .QUIT:
             should_exit = true
 
         case .WINDOW_PIXEL_SIZE_CHANGED:
-            // https://wiki.libsdl.org/SDL3/SDL_Event
-            // see  SDL_WindowEvent
             w := event.window.data1
             h := event.window.data2
             gl.Viewport(0, 0, w, h)
@@ -138,9 +124,6 @@ init_window :: proc(title: cstring, width, height: i32, flags: SDL.WindowFlags) 
         os.exit(1)
     }
 
-    // set opengl core profile and version 3.3
-    // https://pkg.odin-lang.org/vendor/sdl3/#GLAttr
-    // https://pkg.odin-lang.org/vendor/sdl3/#GLProfile
     SDL.GL_SetAttribute(.CONTEXT_PROFILE_MASK,  i32(SDL.GL_CONTEXT_PROFILE_CORE))
     SDL.GL_SetAttribute(.CONTEXT_MAJOR_VERSION, GL_MAJOR_VERSION)
     SDL.GL_SetAttribute(.CONTEXT_MINOR_VERSION, GL_MINOR_VERSION)
@@ -157,8 +140,6 @@ init_window :: proc(title: cstring, width, height: i32, flags: SDL.WindowFlags) 
         os.exit(1)
     }
 
-    // https://pkg.odin-lang.org/vendor/OpenGL/#load_up_to
-    // https://pkg.odin-lang.org/vendor/sdl3/#gl_set_proc_address
     gl.load_up_to(GL_MAJOR_VERSION, GL_MINOR_VERSION, SDL.gl_set_proc_address)
 
     fmt.println("VENDOR   :", gl.GetString(gl.VENDOR))

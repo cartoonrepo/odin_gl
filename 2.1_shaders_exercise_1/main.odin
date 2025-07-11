@@ -1,14 +1,15 @@
-// Try to draw 2 triangles next to each other using glDrawArrays by adding more vertices to your data.
+// Adjust the vertex shader so that the triangle is upside down.
 
 package main
 
 import     "core:fmt"
 import     "core:os"
+import     "core:time"
 import glm "core:math/linalg/glsl"
 import gl  "vendor:OpenGL"
 import SDL "vendor:sdl3"
 
-TITLE         :: "1.2_triangle_exercise_1"
+TITLE         :: "2.1_shaders_exercise_1"
 SCREEN_WIDTH  :: 800
 SCREEN_HEIGHT :: 600
 
@@ -20,7 +21,6 @@ FRAGMENT_SOURCE :: TITLE + "/shader.frag"
 
 Vertex :: struct {
     position: glm.vec2,
-    color   : glm.vec4,
 }
 
 window     : ^SDL.Window
@@ -33,6 +33,7 @@ main :: proc() {
     init_window(TITLE, SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
     defer close_window()
 
+    // vsync
     SDL.GL_SetSwapInterval(1)
 
     shader, ok := gl.load_shaders(VERTEX_SOURCE, FRAGMENT_SOURCE)
@@ -43,23 +44,11 @@ main :: proc() {
         }
     }
 
-    // colors for 'a_color' in vertex shader.
-    tomato_red     := glm.vec4{1.0,   0.388, 0.278, 1.0}
-    warm_gold      := glm.vec4{1.0,   0.8,   0.361, 1.0}
-    soft_violet    := glm.vec4{0.729, 0.408, 0.784, 1.0}
-    mint_green     := glm.vec4{0.4,   1.0,   0.8,   1.0}
-
     // vertices for hungry gpu.
     vertices := []Vertex {
-        // first triangle
-        {{-1.0, -0.5}, mint_green }, // bottom left
-        {{ 0.0, -0.5}, warm_gold  }, // bottom right
-        {{-0.5, 0.5 }, soft_violet}, // top
-
-        // second triangle
-        {{ 0.0, -0.5}, mint_green }, // bottom left
-        {{ 1.0, -0.5}, warm_gold  }, // bottom right
-        {{ 0.5, 0.5 }, soft_violet}, // top
+        {{-0.5, -0.5}}, // bottom left
+        {{ 0.5, -0.5}}, // bottom right
+        {{ 0.0,  0.5}}, // top
     }
 
     // buffers
@@ -74,12 +63,14 @@ main :: proc() {
     gl.BufferData(gl.ARRAY_BUFFER, len(vertices) * size_of(vertices[0]), raw_data(vertices), gl.STATIC_DRAW)
 
     gl.EnableVertexAttribArray(0) // a_positon in vertex shader
-    gl.EnableVertexAttribArray(1) // a_color   in vertex shader
-
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
-    gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
+
+    start_tick := time.tick_now()
 
     for {
+        duration := time.tick_since(start_tick)
+        t := f32(time.duration_seconds(duration))
+
         process_events()
         if should_exit { break }
 
@@ -88,6 +79,13 @@ main :: proc() {
         gl.Clear(gl.COLOR_BUFFER_BIT)
 
         gl.UseProgram(shader)
+
+        green :=  glm.sin(t) / 2 + 0.5
+        red   :=  glm.cos(t) / 4 + 0.5
+        blue  :=  glm.cos(t) / 6 + 0.5
+
+        gl.Uniform4f(gl.GetUniformLocation(shader, "our_color"), red, green, blue, 1.0)
+
         gl.BindVertexArray(vao)
         gl.DrawArrays(gl.TRIANGLES, 0, i32(len(vertices)))
 
