@@ -3,7 +3,7 @@
 // Once you managed to do this; try to answer the following question: why is the bottom-left side of our triangle black
 
 // ans:
-// we are passing negative value for frag_color. {{-0.5, -0.5}}, // bottom left
+// we are passing negative value to frag_color. {{-0.5, -0.5}}, // bottom left
 // negative value gets clamped.
 
 package main
