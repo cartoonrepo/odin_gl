@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 project_name="game"
 build_dir="build" # build directory
 
-source="1.0_triangle" # source directory
+source="3.0_textures" # source directory
 
 # uncomment below line and add collecton directory if you want to use collection
 # collection="-collection:shared=dir/to/shared"
@@ -45,7 +45,7 @@ build_check() {
 }
 
 build() {
-    if [ ! -d "$source" ]; then print "source directory '$source' does not exits." $red && exit; fi
+    if [ ! -d "$source" ]; then print "source directory '$source' does not exits." $red && read -p "Press [Enter] to close." && exit; fi
     if [ "$run" == true ]; then command="run"; else command="build"; fi
 
     odin $command $source -out:$output $flags $collection
