@@ -47,10 +47,10 @@ main :: proc() {
 
     // vertices for hungry gpu.
     vertices := []Vertex {
-        {{-0.5,  0.5}, {1.0, 0.0, 0.0, 1.0}, {0.0, 1.0}}, // top    left
+        {{-0.5,  0.5}, {1.0, 0.0, 0.0, 1.0}, {0.0, 1.0}}, // top    left 
         {{ 0.5,  0.5}, {1.0, 0.0, 0.0, 1.0}, {1.0, 1.0}}, // top    right
         {{ 0.5, -0.5}, {1.0, 0.0, 0.0, 1.0}, {1.0, 0.0}}, // bottom right
-        {{-0.5, -0.5}, {1.0, 0.0, 0.0, 1.0}, {0.0, 0.0}}, // bottom left
+        {{-0.5, -0.5}, {1.0, 0.0, 0.0, 1.0}, {0.0, 0.0}}, // bottom left 
     }
 
     indices := []u16 {0, 1, 2, 2, 3, 0}
@@ -71,8 +71,8 @@ main :: proc() {
     gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices) * size_of(indices[0]), raw_data(indices), gl.STATIC_DRAW)
 
     gl.EnableVertexAttribArray(0) // a_positon
-    gl.EnableVertexAttribArray(1) // a_positon
-    gl.EnableVertexAttribArray(2) // a_positon
+    gl.EnableVertexAttribArray(1) // a_color
+    gl.EnableVertexAttribArray(2) // a_tex_coord
 
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)),  gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
     gl.VertexAttribPointer(1, i32(len(vertices[0].color)),     gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))

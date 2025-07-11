@@ -50,11 +50,11 @@ main :: proc() {
 
     // vertices for hungry gpu.
     vertices := []Vertex {
-        //a_position   a_color    in vertex shader
-        {{-0.5,  0.5}, mint_green }, // top    left
+        //a_position   a_color    in vertex shader  
+        {{-0.5,  0.5}, mint_green }, // top    left 
         {{ 0.5,  0.5}, warm_gold  }, // top    right
         {{ 0.5, -0.5}, soft_violet}, // bottom right
-        {{-0.5, -0.5}, tomato_red }, // bottom left
+        {{-0.5, -0.5}, tomato_red }, // bottom left 
     }
     //                 first  |  second   triangle
     indices := []u16 { 0, 1, 2, 2, 3, 0 }

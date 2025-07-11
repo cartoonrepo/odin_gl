@@ -84,6 +84,8 @@ main :: proc() {
     gl.VertexAttribPointer(0, i32(len(vertices[0].position)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, position))
     gl.VertexAttribPointer(1, i32(len(vertices[0].color)),    gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
 
+    // gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+
     for {
         process_events()
         if should_exit { break }
