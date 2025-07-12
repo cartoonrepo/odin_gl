@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 project_name="game"
 build_dir="build" # build directory
 
-source="3.0_textures" # source directory
+source="3.1_textures" # source directory
 
 # uncomment below line and add collecton directory if you want to use collection
 # collection="-collection:shared=dir/to/shared"

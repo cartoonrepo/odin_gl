@@ -8,7 +8,7 @@ import gl   "vendor:OpenGL"
 import SDL  "vendor:sdl3"
 import stbi "vendor:stb/image"
 
-TITLE         :: "3.0_textures"
+TITLE         :: "3.1_textures"
 SCREEN_WIDTH  :: 800
 SCREEN_HEIGHT :: 600
 
@@ -18,7 +18,8 @@ GL_MINOR_VERSION :: 3
 VERTEX_SOURCE   :: TITLE + "/shader.vert"
 FRAGMENT_SOURCE :: TITLE + "/shader.frag"
 
-TEXTURE_SOURCE :: "./resources/textures/1.png"
+TEXTURE_SOURCE_1 :: "./resources/textures/1.png"
+TEXTURE_SOURCE_2 :: "./resources/textures/2.png"
 
 Vertex :: struct {
     position  : glm.vec2,
@@ -45,7 +46,6 @@ main :: proc() {
         }
     }
 
-    // vertices for hungry gpu.
     vertices := []Vertex {
         {{-0.5,  0.5}, {1.0, 0.0, 0.0, 1.0}, {0.0, 1.0}}, // top    left 
         {{ 0.5,  0.5}, {0.0, 1.0, 0.0, 1.0}, {1.0, 1.0}}, // top    right
@@ -55,7 +55,6 @@ main :: proc() {
 
     indices := []u16 {0, 1, 2, 2, 3, 0}
 
-    // buffers
     vao, vbo, ebo: u32
 
     gl.GenVertexArrays(1, &vao); defer gl.DeleteVertexArrays(1, &vao)
@@ -78,55 +77,68 @@ main :: proc() {
     gl.VertexAttribPointer(1, i32(len(vertices[0].color)),     gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, color))
     gl.VertexAttribPointer(2, i32(len(vertices[0].tex_coord)), gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, tex_coord))
 
-
-    texture : u32
-
-    gl.GenTextures(1, &texture)
-    gl.BindTexture(gl.TEXTURE_2D, texture)
-
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
-
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-
-    w, h, channels: i32
     stbi.set_flip_vertically_on_load(1)
-    data := stbi.load(TEXTURE_SOURCE, &w, &h, &channels, 0)
-    if data != nil {
-        gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
-        gl.GenerateMipmap(gl.TEXTURE_2D)
-    } else {
-        fmt.println("Failed to load textures.")
-    }
+    texture: [2]u32
+    gl.GenTextures(2, raw_data(texture[:])); defer gl.DeleteTextures(2, raw_data(texture[:]))
+    load_texture(&texture[0], TEXTURE_SOURCE_1, gl.RGBA, gl.RGBA)
+    load_texture(&texture[1], TEXTURE_SOURCE_2, gl.RGBA, gl.RGBA)
 
-    stbi.image_free(data)
-
-    start_tick := time.tick_now()
+    gl.UseProgram(shader)
+    gl.Uniform1i(gl.GetUniformLocation(shader, "texture_0"), 0)
+    gl.Uniform1i(gl.GetUniformLocation(shader, "texture_1"), 1)
+    
+    mix_value : f32
+    key_state := SDL.GetKeyboardState(nil)
+    
     main_loop: for {
-        duration := time.tick_since(start_tick)
-        t := f32(time.duration_seconds(duration))
+        // press w, s to mix between two textures.
+        if key_state[i32(SDL.Scancode.W)] {
+            mix_value += 0.1
+        }
+        if key_state[i32(SDL.Scancode.S)] {
+            mix_value -= 0.1
+        }
+
+        if mix_value > 1 { mix_value = 1}
+        if mix_value < 0 { mix_value = 0}
 
         if !process_events() {
             break main_loop
         }
 
         // draw
-        gl.ClearColor(0.0, 0.1, 0.15, 1.0)
         gl.Clear(gl.COLOR_BUFFER_BIT)
 
-        gl.UseProgram(shader)
+        gl.ActiveTexture(gl.TEXTURE0)
+        gl.BindTexture(gl.TEXTURE_2D, texture[0])
+        gl.ActiveTexture(gl.TEXTURE1)
+        gl.BindTexture(gl.TEXTURE_2D, texture[1])
 
-        green :=  glm.sin(t) / 2 + 0.5
-        red   :=  glm.cos(t) / 4 + 0.5
-
-        gl.Uniform4f(gl.GetUniformLocation(shader, "our_color"), green, red, 0, 1.0)
+        gl.Uniform1f(gl.GetUniformLocation(shader, "mix_value"), mix_value)
 
         gl.BindVertexArray(vao)
         gl.DrawElements(gl.TRIANGLES, i32(len(indices)), gl.UNSIGNED_SHORT, nil)
 
         SDL.GL_SwapWindow(window)
     }
+}
+
+load_texture :: proc(texture: ^u32, source: cstring, internalformat: i32, format: u32) {
+    gl.BindTexture(gl.TEXTURE_2D, texture^)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+
+    w, h, channels: i32
+    data := stbi.load(source, &w, &h, &channels, 0)
+    if data != nil {
+        gl.TexImage2D(gl.TEXTURE_2D, 0, internalformat, w, h, 0, format, gl.UNSIGNED_BYTE, data)
+        gl.GenerateMipmap(gl.TEXTURE_2D)
+    } else {
+        fmt.println("Failed to load texture.")
+    }
+    stbi.image_free(data)
 }
 
 process_events :: proc() -> bool {
@@ -188,3 +200,4 @@ close_window :: proc() {
     SDL.GL_DestroyContext(gl_context)
     SDL.DestroyWindow(window)
 }
+
