@@ -107,10 +107,12 @@ main :: proc() {
         }
 
         // draw
+        gl.ClearColor(0.0, 0.1, 0.15, 1.0)
         gl.Clear(gl.COLOR_BUFFER_BIT)
 
         gl.ActiveTexture(gl.TEXTURE0)
         gl.BindTexture(gl.TEXTURE_2D, texture[0])
+
         gl.ActiveTexture(gl.TEXTURE1)
         gl.BindTexture(gl.TEXTURE_2D, texture[1])
 
