@@ -6,15 +6,14 @@ cd "$(dirname "$0")"
 
 #---------------------------------------------------------------
 project_name="game"
-build_dir="build" # build directory
+build_dir="build"
 
-source="3.1_textures" # source directory
+source="3.2_textures_exercise_3"
 
-# uncomment below line and add collecton directory if you want to use collection
-# collection="-collection:shared=dir/to/shared"
+# collection="-collection:util=utils"
 
 vet="-vet-shadowing -vet-using-stmt -strict-style"
-debug_flags="-debug -o:none -keep-executable $vet" #remove -keep-executable if you don't need.
+debug_flags="-debug -o:none -keep-executable $vet"
 release_flags="-o:speed -strict-style -vet"
 #---------------------------------------------------------------
 
@@ -23,7 +22,6 @@ red='\033[0;31m'
 blue='\033[0;34m'
 no_color='\033[0m'
 
-# very useful, no echo bullshit
 print() {
     local color=$2
     if [ -z $color ]; then color=$blue; fi
@@ -70,7 +68,6 @@ release_build() {
 # make buid directory if not exits.
 if [ ! -d "$build_dir" ]; then mkdir $build_dir ;fi
 
-# take stupid arguments ---------------------------------
 for arg in "$@"; do
     if [ "$arg" == "debug" ];   then debug=true   ;fi
     if [ "$arg" == "release" ]; then release=true ;fi

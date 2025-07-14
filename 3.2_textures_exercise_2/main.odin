@@ -8,7 +8,7 @@ import stbi "vendor:stb/image"
 
 import "../utils"
 
-TITLE         :: "3.1_textures"
+TITLE         :: "3.2_textures_exercise_2"
 SCREEN_WIDTH  :: 800
 SCREEN_HEIGHT :: 800
 
@@ -25,7 +25,6 @@ Vertex :: struct {
 }
 
 main :: proc() {
-
     utils.init_window(TITLE, SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
     defer utils.close_window()
 
@@ -36,14 +35,14 @@ main :: proc() {
     defer gl.DeleteProgram(shader)
     if !ok {
         when gl.GL_DEBUG {
-            fmt.eprintln(gl.get_last_error_message())
+            fmt.eprintln("SHADER ERROR:\n", gl.get_last_error_message())
         }
     }
 
     vertices := []Vertex {
-        {{-0.5,  0.5}, {1.0, 0.0, 0.0, 1.0}, {0.0, 1.0}}, // top    left 
-        {{ 0.5,  0.5}, {0.0, 1.0, 0.0, 1.0}, {1.0, 1.0}}, // top    right
-        {{ 0.5, -0.5}, {0.0, 0.0, 1.0, 1.0}, {1.0, 0.0}}, // bottom right
+        {{-0.5,  0.5}, {1.0, 0.0, 0.0, 1.0}, {0.0, 2.0}}, // top    left 
+        {{ 0.5,  0.5}, {0.0, 1.0, 0.0, 1.0}, {2.0, 2.0}}, // top    right
+        {{ 0.5, -0.5}, {0.0, 0.0, 1.0, 1.0}, {2.0, 0.0}}, // bottom right
         {{-0.5, -0.5}, {1.0, 1.0, 0.0, 1.0}, {0.0, 0.0}}, // bottom left 
     }
 
@@ -74,14 +73,30 @@ main :: proc() {
     stbi.set_flip_vertically_on_load(1)
     texture: [2]u32
     gl.GenTextures(2, raw_data(texture[:])); defer gl.DeleteTextures(2, raw_data(texture[:]))
-    load_texture(&texture[0], TEXTURE_SOURCE_1, gl.RGBA, gl.RGBA)
-    load_texture(&texture[1], TEXTURE_SOURCE_2, gl.RGBA, gl.RGBA)
+
+    gl.BindTexture(gl.TEXTURE_2D, texture[0])
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_BORDER)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_BORDER)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    border_color := []f32{ 0.5, 0.5, 0.0, 1.0 }
+    gl.TexParameterfv(gl.TEXTURE_2D, gl.TEXTURE_BORDER_COLOR, raw_data(border_color[:]))
+    load_image(TEXTURE_SOURCE_1, gl.RGBA, gl.RGBA)
+
+    gl.BindTexture(gl.TEXTURE_2D, texture[1])
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    load_image(TEXTURE_SOURCE_2, gl.RGBA, gl.RGBA)
+
+
 
     gl.UseProgram(shader)
     gl.Uniform1i(gl.GetUniformLocation(shader, "texture_0"), 0)
     gl.Uniform1i(gl.GetUniformLocation(shader, "texture_1"), 1)
     
-    mix_value : f32
+    mix_value : f32 = 0.2
     key_state := SDL.GetKeyboardState(nil)
     
     main_loop: for {
@@ -119,14 +134,7 @@ main :: proc() {
     }
 }
 
-load_texture :: proc(texture: ^u32, source: cstring, internalformat: i32, format: u32) {
-    gl.BindTexture(gl.TEXTURE_2D, texture^)
-
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-
+load_image :: proc(source: cstring, internalformat: i32, format: u32) {
     w, h, channels: i32
     data := stbi.load(source, &w, &h, &channels, 0)
     if data != nil {

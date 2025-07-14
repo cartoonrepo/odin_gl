@@ -8,7 +8,7 @@ import stbi "vendor:stb/image"
 
 import "../utils"
 
-TITLE         :: "3.1_textures"
+TITLE         :: "3.2_textures_exercise_3"
 SCREEN_WIDTH  :: 800
 SCREEN_HEIGHT :: 800
 
@@ -25,7 +25,6 @@ Vertex :: struct {
 }
 
 main :: proc() {
-
     utils.init_window(TITLE, SCREEN_WIDTH, SCREEN_HEIGHT, {.OPENGL})
     defer utils.close_window()
 
@@ -41,10 +40,10 @@ main :: proc() {
     }
 
     vertices := []Vertex {
-        {{-0.5,  0.5}, {1.0, 0.0, 0.0, 1.0}, {0.0, 1.0}}, // top    left 
-        {{ 0.5,  0.5}, {0.0, 1.0, 0.0, 1.0}, {1.0, 1.0}}, // top    right
-        {{ 0.5, -0.5}, {0.0, 0.0, 1.0, 1.0}, {1.0, 0.0}}, // bottom right
-        {{-0.5, -0.5}, {1.0, 1.0, 0.0, 1.0}, {0.0, 0.0}}, // bottom left 
+        {{-0.5,  0.5}, {1.0, 0.0, 0.0, 1.0}, {0.4, 0.3}}, // top    left 
+        {{ 0.5,  0.5}, {0.0, 1.0, 0.0, 1.0}, {0.3, 0.3}}, // top    right
+        {{ 0.5, -0.5}, {0.0, 0.0, 1.0, 1.0}, {0.3, 0.4}}, // bottom right
+        {{-0.5, -0.5}, {1.0, 1.0, 0.0, 1.0}, {0.4, 0.4}}, // bottom left 
     }
 
     indices := []u16 {0, 1, 2, 2, 3, 0}
@@ -124,8 +123,14 @@ load_texture :: proc(texture: ^u32, source: cstring, internalformat: i32, format
 
     gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
     gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+
+    // gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    // gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+
+    border_color := []f32{ 0.5, 0.5, 0.0, 1.0 }
+    gl.TexParameterfv(gl.TEXTURE_2D, gl.TEXTURE_BORDER_COLOR, raw_data(border_color[:]))
 
     w, h, channels: i32
     data := stbi.load(source, &w, &h, &channels, 0)
