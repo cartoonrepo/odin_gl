@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 project_name="game"
 build_dir="build"
 
-source="3.2_textures_exercise_3"
+source="5.0_coordinate_systems"
 
 # collection="-collection:util=utils"
 
