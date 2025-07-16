@@ -1,12 +1,9 @@
-package util
+package utils
 
 import      "core:fmt"
 import      "core:os"
-// import      "core:time"
-// import glm  "core:math/linalg/glsl"
 import gl   "vendor:OpenGL"
 import SDL  "vendor:sdl3"
-// import stbi "vendor:stb/image"
 
 GL_MAJOR_VERSION :: 3
 GL_MINOR_VERSION :: 3

@@ -85,7 +85,6 @@ main :: proc() {
     gl.Uniform1i(uniforms["texture_1"].location, 1)
 
 
-    pos : [3]f32
     mix_value : f32 = 0.1
     key_state := SDL.GetKeyboardState(nil)
 
@@ -95,11 +94,9 @@ main :: proc() {
         // press w, s to mix between two textures.
         if key_state[i32(SDL.Scancode.W)] {
             mix_value += 0.1
-            pos.z += 0.1
         }
         if key_state[i32(SDL.Scancode.S)] {
             mix_value -= 0.1
-            pos.z -= 0.1
         }
 
         if mix_value > 1 { mix_value = 1}
@@ -120,9 +117,9 @@ main :: proc() {
 
         gl.Uniform1f(uniforms["mix_value"].location, mix_value)
 
-        model      := glm.mat4Rotate({1.0, 0.0, 0.0}, glm.radians(t))
-        view       := glm.mat4Translate({pos.x, pos.y, pos.z})
-        projection := glm.mat4Perspective(glm.radians_f32(45.0), f32(SCREEN_WIDTH) / f32(SCREEN_HEIGHT), 0.1, 100)
+        model      := glm.mat4Rotate({1.0, 0.0, 0.0}, t * glm.radians_f32(69))
+        view       := glm.mat4Translate({0.0, 0.0, -3.0})
+        projection := glm.mat4Perspective(glm.radians_f32(45), f32(SCREEN_WIDTH) / f32(SCREEN_HEIGHT), 0.1, 100)
 
         gl.UniformMatrix4fv(uniforms["model"].location,      1, false, &model[0, 0])
         gl.UniformMatrix4fv(uniforms["view"].location,       1, false, &view[0, 0])
